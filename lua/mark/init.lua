@@ -1,41 +1,37 @@
 local M = {}
 
 local colors = {
-  { bg = '#5e81ac' },
-  { bg = '#afd787' }
+  { bg = '#cc6666' },
+  { bg = '#b5bd68' },
+  { bg = '#f0c674' },
+  { bg = '#81a2be' },
+  { bg = '#b294bb' },
+  { bg = '#8abeb7' },
+  { bg = '#c5c8c6' }
 }
 
-local DefineHighlighting = function(palette, isOverride)
-  local command = isOverride and 'highlight' or 'highlight def'
-  -- local highlightingNum = select('#', palette)
+local cache = {}
 
-  -- print('DefineHighlighting num [' .. highlightingNum .. ']')
+local DefineHighlighting = function(aPalette)
+  -- local command = isOverride and 'highlight' or 'highlight def'
 
-  -- for i = 1, highlightingNum do
-  --   local group = 'markWord' .. i
-  --   local bg = palette[i].bg
-  --   local cmd = command .. ' ' .. group .. ' guibg=' .. bg
-  --   print('call ' .. cmd)
-  --   vim.cmd(cmd)
-  -- end
-
-  for i = 1, #palette do
+  for i = 1, #aPalette do
     local group = 'markWord' .. i
-    local bg = palette[i].bg
-    local cmd = command .. ' ' .. group .. ' guibg=' .. bg
-    print('call ' .. cmd)
-    vim.cmd(cmd)
+    local paletteBg = aPalette[i].bg
+    -- local cmd = command .. ' ' .. group .. ' guibg=' .. bg
+    -- print(':> ' .. cmd)
+    -- vim.cmd(cmd)
+    vim.api.nvim_set_hl(0, group, { bg = paletteBg })
   end
-
 end
 
 M.setup = function()
   print("kahido mark.nvim plugin")
-  DefineHighlighting(colors, true)
+  DefineHighlighting(colors)
 end
 
-local empty = function(string)
-  return string == nil or string == ''
+local empty = function(aString)
+  return aString == nil or aString == ''
 end
 
 -- local SetMark = function(index, regexp, ...)
@@ -81,6 +77,30 @@ end
 --   end
 -- end
 
+M.DoMark = function(aGroupNum, ...)
+  local group = 'markWord' .. aGroupNum
+  local mid = 1077 + aGroupNum
+
+  local isRegexp = select('#', ...)
+  if isRegexp > 0 then
+    local regexp = select(1, ...)
+
+    -- TODO search for regexp in State Machine
+    if cache[regexp] ~= nil then
+      local id = cache[regexp]
+      print(': call matchdelete(' .. id .. ')')
+      vim.fn.matchdelete(id)
+      cache[regexp] = nil
+    else
+      print(': call matchadd(' .. group .. ', ' .. regexp .. ')')
+      local id = vim.fn.matchadd(group, regexp)
+      print(': cache(' .. regexp .. ' = ' .. id .. ')')
+      cache[regexp] = id
+    end
+
+  end
+end
+
 M.MarkCurrentWord = function()
   local groupNum = vim.v.count
   local regexp = ''
@@ -95,14 +115,17 @@ M.MarkCurrentWord = function()
     end
   end
 
+  if groupNum == 0 then
+    groupNum = 1 -- FIXME: select first free number
+  end
+
   print('regexp [' .. regexp .. '] groupNum [' .. groupNum .. ']')
 
   if empty(regexp) then
     return 0
   else
-    return 0 --M.DoMark(groupNum)
+    return M.DoMark(groupNum, regexp)
   end
 end
-
 
 return M
