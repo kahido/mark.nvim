@@ -10,7 +10,8 @@ local colors = {
   { bg = '#c5c8c6' }
 }
 
-local cache = {}
+local cache_regexp_id = {}
+local cache_id_regexp = {}
 
 local DefineHighlighting = function(aPalette)
   -- local command = isOverride and 'highlight' or 'highlight def'
@@ -21,7 +22,7 @@ local DefineHighlighting = function(aPalette)
     -- local cmd = command .. ' ' .. group .. ' guibg=' .. bg
     -- print(':> ' .. cmd)
     -- vim.cmd(cmd)
-    vim.api.nvim_set_hl(0, group, { bg = paletteBg })
+    vim.api.nvim_set_hl(0, group, { fg = '#1d1f21', bg = paletteBg })
   end
 end
 
@@ -32,6 +33,16 @@ end
 
 local empty = function(aString)
   return aString == nil or aString == ''
+end
+
+local getGroupNumber = function(aPalette)
+  for i = 1, #aPalette do
+    local mid = 1077 + i
+    if cache_id_regexp[mid] == nil then
+      return i
+    end
+  end
+  return 0
 end
 
 -- local SetMark = function(index, regexp, ...)
@@ -83,27 +94,36 @@ M.DoMark = function(aGroupNum, ...)
 
   local isRegexp = select('#', ...)
   if isRegexp > 0 then
+    print('DoMark with regexp')
     local regexp = select(1, ...)
 
     -- TODO search for regexp in State Machine
-    if cache[regexp] ~= nil then
-      local id = cache[regexp]
+    if cache_regexp_id[regexp] ~= nil then
+      local id = cache_regexp_id[regexp]
       print(': call matchdelete(' .. id .. ')')
       vim.fn.matchdelete(id)
-      cache[regexp] = nil
+      cache_regexp_id[regexp] = nil
+      cache_id_regexp[id] = nil
     else
       print(': call matchadd(' .. group .. ', ' .. regexp .. ')')
-      local id = vim.fn.matchadd(group, regexp)
-      print(': cache(' .. regexp .. ' = ' .. id .. ')')
-      cache[regexp] = id
-    end
 
+      if cache_id_regexp[mid] ~= nil then
+        vim.fn.matchdelete(mid)
+      end
+
+      local id = vim.fn.matchadd(group, regexp, 10, mid)
+      print(': cache_regexp_id(' .. regexp .. ' = ' .. id .. ')')
+      cache_regexp_id[regexp] = id
+      cache_id_regexp[id] = regexp
+    end
+  else
+    print('DoMark without regexp')
   end
 end
 
 M.MarkCurrentWord = function()
   local groupNum = vim.v.count
-  local regexp = ''
+  local regexp = '' -- TODO: get regexp from command
 
   if empty(regexp) then
     local cword = vim.fn.expand("<cword>")
@@ -116,12 +136,12 @@ M.MarkCurrentWord = function()
   end
 
   if groupNum == 0 then
-    groupNum = 1 -- FIXME: select first free number
+    groupNum = getGroupNumber(colors)
   end
 
   print('regexp [' .. regexp .. '] groupNum [' .. groupNum .. ']')
 
-  if empty(regexp) then
+  if groupNum == 0 then
     return 0
   else
     return M.DoMark(groupNum, regexp)
