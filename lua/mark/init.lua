@@ -1,34 +1,26 @@
-local M = {}
+-- Plugin name:             mark.nvim
+-- Description:             A Neovim plugin.
+-- Author:                  Kahido
+-- Website:                 https://github.com/kahido/mark.nvim
 
-local colors = {
-  { bg = '#cc6666' },
-  { bg = '#b5bd68' },
-  { bg = '#f0c674' },
-  { bg = '#81a2be' },
-  { bg = '#b294bb' },
-  { bg = '#8abeb7' },
-  { bg = '#c5c8c6' }
+local M = {
+  DEBUG = false
 }
+
+-- Global Variables
 
 local cache_regexp_id = {}
 local cache_id_regexp = {}
 
-local DefineHighlighting = function(aPalette)
-  -- local command = isOverride and 'highlight' or 'highlight def'
+-- Local Functions
 
+local defineHighlighting = function(aPalette)
   for i = 1, #aPalette do
     local group = 'markWord' .. i
     local paletteBg = aPalette[i].bg
-    -- local cmd = command .. ' ' .. group .. ' guibg=' .. bg
-    -- print(':> ' .. cmd)
-    -- vim.cmd(cmd)
+    print('Set palette = ' .. paletteBg)
     vim.api.nvim_set_hl(0, group, { fg = '#1d1f21', bg = paletteBg })
   end
-end
-
-M.setup = function()
-  print("kahido mark.nvim plugin")
-  DefineHighlighting(colors)
 end
 
 local empty = function(aString)
@@ -44,6 +36,24 @@ local getGroupNumber = function(aPalette)
   end
   return 0
 end
+
+-- Plugin
+
+M.setup = function(aOpt)
+  local config = require('mark.config')
+  config.set_options(aOpt)
+
+  M.DEBUG = aOpt.DEBUG
+
+  print('Set variable DEBUG = ' .. tostring(M.DEBUG))
+
+  if M.DEBUG then
+    print("kahido mark.nvim plugin")
+  end
+
+  defineHighlighting(config.options.palette)
+end
+
 
 -- local SetMark = function(index, regexp, ...)
 --   SetPattern(index, regexp)
@@ -94,34 +104,41 @@ M.DoMark = function(aGroupNum, ...)
 
   local isRegexp = select('#', ...)
   if isRegexp > 0 then
-    print('DoMark with regexp')
     local regexp = select(1, ...)
 
-    -- TODO search for regexp in State Machine
     if cache_regexp_id[regexp] ~= nil then
       local id = cache_regexp_id[regexp]
-      print(': call matchdelete(' .. id .. ')')
+      if M.DEBUG then
+        print(': call matchdelete(' .. id .. ')')
+      end
       vim.fn.matchdelete(id)
+      if M.DEBUG then
+        print(': cache_regexp_id(' .. regexp .. ' = ' .. id .. ')')
+      end
       cache_regexp_id[regexp] = nil
       cache_id_regexp[id] = nil
     else
-      print(': call matchadd(' .. group .. ', ' .. regexp .. ')')
-
       if cache_id_regexp[mid] ~= nil then
+        if M.DEBUG then
+          print(': call matchdelete(' .. mid .. ')')
+        end
         vim.fn.matchdelete(mid)
       end
-
+      if M.DEBUG then
+        print(': call matchadd(' .. group .. ', ' .. regexp .. ')')
+      end
       local id = vim.fn.matchadd(group, regexp, 10, mid)
-      print(': cache_regexp_id(' .. regexp .. ' = ' .. id .. ')')
+      if M.DEBUG then
+        print(': cache_regexp_id(' .. regexp .. ' = ' .. id .. ')')
+      end
       cache_regexp_id[regexp] = id
       cache_id_regexp[id] = regexp
     end
-  else
-    print('DoMark without regexp')
   end
 end
 
 M.MarkCurrentWord = function()
+  local options = require('mark.config').options
   local groupNum = vim.v.count
   local regexp = '' -- TODO: get regexp from command
 
@@ -136,10 +153,12 @@ M.MarkCurrentWord = function()
   end
 
   if groupNum == 0 then
-    groupNum = getGroupNumber(colors)
+    groupNum = getGroupNumber(options.palette)
   end
 
-  print('regexp [' .. regexp .. '] groupNum [' .. groupNum .. ']')
+  if M.DEBUG then
+    print('regexp [' .. regexp .. '] groupNum [' .. groupNum .. ']')
+  end
 
   if groupNum == 0 then
     return 0
