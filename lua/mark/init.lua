@@ -98,6 +98,14 @@ end
 --   end
 -- end
 
+M.GetVisualSelection = function()
+  local esc = vim.api.nvim_replace_termcodes("<esc>", true, false, true)
+  vim.api.nvim_feedkeys(esc, "x", false)  -- Exit visual mode temporarily
+  local vstart = vim.fn.getpos("'<'")
+  local vend = vim.fn.getpos("'>'")
+  return table.concat(vim.api.nvim_buf_get_text(0, vstart[2]-1, vstart[3]-1, vend[2], vend[3], {}), "\n")
+end
+
 M.DoMark = function(aGroupNum, ...)
   local group = 'markWord' .. aGroupNum
   local mid = 1077 + aGroupNum
@@ -150,6 +158,30 @@ M.MarkCurrentWord = function()
       -- <cword> actually only consists of keyword characters.
       -- TODO[] match cword with regular expresion
     end
+  end
+
+  if groupNum == 0 then
+    groupNum = getGroupNumber(options.palette)
+  end
+
+  if M.DEBUG then
+    print('regexp [' .. regexp .. '] groupNum [' .. groupNum .. ']')
+  end
+
+  if groupNum == 0 then
+    return 0
+  else
+    return M.DoMark(groupNum, regexp)
+  end
+end
+
+M.MarkSelectedWord = function()
+  local options = require('mark.config').options
+  local groupNum = vim.v.count
+  local regexp = M.GetVisualSelection()
+
+  if empty(regexp) then
+    return 0
   end
 
   if groupNum == 0 then
