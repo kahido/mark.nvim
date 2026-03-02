@@ -98,12 +98,21 @@ end
 --   end
 -- end
 
+-- M.GetVisualSelection = function()
+--   local esc = vim.api.nvim_replace_termcodes("<esc>", true, false, true)
+--   vim.api.nvim_feedkeys(esc, "x", false)  -- Exit visual mode temporarily
+--   local vstart = vim.fn.getpos("'<'")
+--   local vend = vim.fn.getpos("'>'")
+--   return table.concat(vim.api.nvim_buf_get_text(0, vstart[2]-1, vstart[3]-1, vend[2], vend[3], {}), "\n")
+-- end
+
+-- local function get_visual_selection()
 M.GetVisualSelection = function()
   local esc = vim.api.nvim_replace_termcodes("<esc>", true, false, true)
-  vim.api.nvim_feedkeys(esc, "x", false)  -- Exit visual mode temporarily
-  local vstart = vim.fn.getpos("'<'")
-  local vend = vim.fn.getpos("'>'")
-  return table.concat(vim.api.nvim_buf_get_text(0, vstart[2]-1, vstart[3]-1, vend[2], vend[3], {}), "\n")
+  vim.api.nvim_feedkeys(esc, "x", false)
+  local vstart = vim.fn.getpos("'<")
+  local vend = vim.fn.getpos("'>")
+  return table.concat(vim.fn.getregion(vstart, vend), "\n")
 end
 
 M.DoMark = function(aGroupNum, ...)

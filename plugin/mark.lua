@@ -6,7 +6,7 @@ vim.api.nvim_create_user_command("MarkSelectedWord", require("mark").MarkSelecte
 -- mappings ----------------------
 
 vim.keymap.set('n', '<leader>m', '<cmd>MarkSet<CR>', {desc = 'Mark current word key mapping.', noremap = true, silent = true })
-vim.keymap.set('v', '<leader>m', '<cmd>MarkSet<CR>', {desc = 'Mark selected word key mapping.', noremap = true, silent = true })
+vim.keymap.set('v', '<leader>m', '<cmd>MarkSelectedWord<CR>', {desc = 'Mark selected word key mapping.', noremap = true, silent = true })
 
 
 -- Scenarios ---------------------
