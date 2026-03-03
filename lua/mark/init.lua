@@ -3,23 +3,30 @@
 -- Author:                  Kahido
 -- Website:                 https://github.com/kahido/mark.nvim
 
-local M = {
-  DEBUG = false
-}
-
--- Global Variables
+------- Global Variables
 
 local cache_regexp_id = {}
 local cache_id_regexp = {}
 
--- Local Functions
+-- Default the highest match priority to -10, so that we do not override the 'hlsearch' of 0
+local match_priority = -10
 
-local defineHighlighting = function(aPalette)
+-- Base ID
+local base_id = 1077
+
+------- Local Functions
+
+local defineHighlighting = function(aPalette, isDebug)
   for i = 1, #aPalette do
     local group = 'markWord' .. i
+    local paletteFg = '#1d1f21'
     local paletteBg = aPalette[i].bg
-    print('Set palette = ' .. paletteBg)
-    vim.api.nvim_set_hl(0, group, { fg = '#1d1f21', bg = paletteBg })
+
+    if isDebug then
+      print('HIGHLIGHT fg = ' .. paletteFg .. ' bg = ' .. paletteBg)
+    end
+
+    vim.api.nvim_set_hl(0, group, { fg = paletteFg, bg = paletteBg })
   end
 end
 
@@ -29,7 +36,7 @@ end
 
 local getGroupNumber = function(aPalette)
   for i = 1, #aPalette do
-    local mid = 1077 + i
+    local mid = base_id + i
     if cache_id_regexp[mid] == nil then
       return i
     end
@@ -39,21 +46,22 @@ end
 
 -- Plugin
 
-M.setup = function(aOpt)
+local M = {
+  DEBUG = false
+}
+
+M.setup = function(aOpts)
   local config = require('mark.config')
-  config.set_options(aOpt)
 
-  M.DEBUG = aOpt.DEBUG
-
-  print('Set variable DEBUG = ' .. tostring(M.DEBUG))
+  config.set_options(aOpts)
+  M.DEBUG = config.options.DEBUG
 
   if M.DEBUG then
     print("kahido mark.nvim plugin")
   end
 
-  defineHighlighting(config.options.palette)
+  defineHighlighting(config.options.palette, M.DEBUG)
 end
-
 
 -- local SetMark = function(index, regexp, ...)
 --   SetPattern(index, regexp)
@@ -98,15 +106,9 @@ end
 --   end
 -- end
 
--- M.GetVisualSelection = function()
---   local esc = vim.api.nvim_replace_termcodes("<esc>", true, false, true)
---   vim.api.nvim_feedkeys(esc, "x", false)  -- Exit visual mode temporarily
---   local vstart = vim.fn.getpos("'<'")
---   local vend = vim.fn.getpos("'>'")
---   return table.concat(vim.api.nvim_buf_get_text(0, vstart[2]-1, vstart[3]-1, vend[2], vend[3], {}), "\n")
--- end
+M.MarkClear = function()
+end
 
--- local function get_visual_selection()
 M.GetVisualSelection = function()
   local esc = vim.api.nvim_replace_termcodes("<esc>", true, false, true)
   vim.api.nvim_feedkeys(esc, "x", false)
@@ -117,7 +119,7 @@ end
 
 M.DoMark = function(aGroupNum, ...)
   local group = 'markWord' .. aGroupNum
-  local mid = 1077 + aGroupNum
+  local mid = base_id + aGroupNum
 
   local isRegexp = select('#', ...)
   if isRegexp > 0 then
@@ -144,7 +146,7 @@ M.DoMark = function(aGroupNum, ...)
       if M.DEBUG then
         print(': call matchadd(' .. group .. ', ' .. regexp .. ')')
       end
-      local id = vim.fn.matchadd(group, regexp, 10, mid)
+      local id = vim.fn.matchadd(group, regexp, match_priority, mid)
       if M.DEBUG then
         print(': cache_regexp_id(' .. regexp .. ' = ' .. id .. ')')
       end
@@ -162,10 +164,11 @@ M.MarkCurrentWord = function()
   if empty(regexp) then
     local cword = vim.fn.expand("<cword>")
     if not empty(cword) then
-      regexp = cword -- escape any special character from 'cword'
+      -- Escape special regex chars in word, then add word boundaries
+      local escaped = vim.fn.escape(cword, [[\/.*^$?[]~]])
+      regexp = "\\<" .. escaped .. "\\>"
       -- The star command only creates a \<whole word\> search pattern if the
       -- <cword> actually only consists of keyword characters.
-      -- TODO[] match cword with regular expresion
     end
   end
 

@@ -2,6 +2,7 @@
 
 vim.api.nvim_create_user_command("MarkSet", require("mark").MarkCurrentWord, {})
 vim.api.nvim_create_user_command("MarkSelectedWord", require("mark").MarkSelectedWord, {})
+vim.api.nvim_create_user_command("MarkClear", require("mark").MarkClear, {})
 
 -- mappings ----------------------
 
