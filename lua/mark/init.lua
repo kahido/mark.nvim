@@ -107,6 +107,14 @@ end
 -- end
 
 M.MarkClear = function()
+  for mid,regexp in pairs(cache_id_regexp) do
+    if M.DEBUG then
+      print(': call matchdelete(' .. mid .. ')')
+    end
+    vim.fn.matchdelete(mid)
+    cache_regexp_id[regexp] = nil
+    cache_id_regexp[mid] = nil
+  end
 end
 
 M.GetVisualSelection = function()
