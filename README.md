@@ -72,7 +72,10 @@ USAGE
 
 ### MARK HIGHLIGHTING PALETTES
 
-    The plugin comes with predefined palette. You can dynamically toggle between them, e.g. when you need more marks or a different set of colors.
+    The plugin comes with predefined palette. You can dynamically toggle between
+    them, e.g. when you need more marks or a different set of colors.
+    The plugin comes with three predefined palettes. You can dynamically toggle
+    between them, e.g. when you need more marks or a different set of colors.
 
     :MarkPalette {palette}  [TODO] Highlight existing and future marks with the colors
                             defined in {palette}. If the new palette contains less
