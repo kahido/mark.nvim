@@ -88,7 +88,7 @@ CONFIGURATION
 
 For a permanent configuration, put the following commands into your Lazy.nvim configuration.
 
-```
+```lua
 return {
   "kahido/mark.nvim",
   lazy = false,
